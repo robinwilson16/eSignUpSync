@@ -3,6 +3,7 @@ using eSignUpSync.Data;
 using eSignUpSync.Helpers;
 using eSignUpSync.Models;
 using eSignUpSync.Models.Candidates;
+using eSignUpSync.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -17,9 +18,6 @@ namespace eSignUpSync
         private static IConfiguration? _configuration { get; set; }
         private static ApplicationDbContext? _context;
         public static APIAccessToken? APIAccessToken { get; set; }
-
-        public static List<CandidateModel>? CandidatesLocal { get; set; }
-        public static List<CandidateModel>? CandidatesESignUp { get; set; }
 
         public static SettingsExportModel SettingsExport = new SettingsExportModel();
         public static SettingsESignUpModel SettingsESignUp = new SettingsESignUpModel();
@@ -101,17 +99,8 @@ namespace eSignUpSync
                 return 1;
             }
 
-            //Get Local Data
-            CandidatesLocal = await Services.Export.GetLocalCandidates(logger, httpClientLocalData);
-            logger.LogInformation($"\nLoaded Candidates from Local MIS System: {CandidatesLocal?.Count()}\n");
-            if (CandidatesLocal == null || CandidatesLocal.Count() == 0)
-            {
-                logger.LogWarning("No candidates found in local MIS system. Exiting.");
-                return 0;
-            }
-
             //Get eSignUp API Access Token
-            APIAccessToken = await Services.Export.GetESignUpAPIToken(logger, httpClientESignUp, SettingsESignUp);
+            APIAccessToken = await Services.Shared.GetESignUpAPIToken(logger, httpClientESignUp, SettingsESignUp);
             if (APIAccessToken == null || string.IsNullOrEmpty(APIAccessToken.Token))
             {
                 logger.LogError("Failed to acquire eSignUp API Access Token. Exiting.");
@@ -122,30 +111,42 @@ namespace eSignUpSync
                 logger.LogInformation($"Acquired API Access Token:\n{APIAccessToken.Token}\n");
             }
 
-            //Set Authorization Header for eSignUp HTTP Client    
-            httpClientESignUp.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", APIAccessToken.Token);
+            bool? isError = false;
 
-            //Get eSignUp Data
-            CandidatesESignUp = await Services.Export.GetESignUpCandidates(logger, httpClientESignUp);
-            logger.LogInformation($"\nLoaded Candidates from eSignUp: {CandidatesESignUp?.Count()}\n");
-            if (CandidatesESignUp == null || CandidatesESignUp.Count() == 0)
+            //Perform Import to import eSignUp data to local eSignUp Database
+            int? importResult = await Services.Import.DoImport(logger, httpClientLocalData, httpClientESignUp, APIAccessToken);
+            if (importResult == null || importResult > 0)
             {
-                logger.LogWarning("No candidates found in eSignUp");
-                //return 0;
+                logger.LogError("Import Failed");
+                isError = true;
+            }
+            else
+            {
+                logger.LogInformation($"DoImport Process Finished.");
+            }
+
+            //Perform Export to export local data to eSignUp
+            int? exportResult = await Export.DoExport(logger, httpClientLocalData, httpClientESignUp, APIAccessToken);
+            if (exportResult == null || exportResult > 0)
+            {
+                logger.LogError("Export Failed");
+                isError = true;
+            }
+            else
+            {
+                logger.LogInformation($"DoExport Process Finished.");
             }
             
-            //Send Local Candidates to eSignUp
-            int? totalCandidates = CandidatesLocal?.Count() ?? 0;
-            int? recordsSent = await Services.Export.SendLocalCandidates(logger, httpClientESignUp, CandidatesLocal);
-
-            logger.LogInformation($"\nTotal Candidates Sent to eSignUp: {recordsSent}\n");
-
-            if (recordsSent == null || recordsSent < totalCandidates)
+            if (isError == true)
             {
-                logger.LogWarning("Some candidates may not have been sent successfully. Please check the logs for details.");
+                logger.LogError("eSignUp Sync Finished with Errors.");
                 return 1;
             }
-
+            else
+            {
+                logger.LogInformation($"eSignUp Sync Process Finished.");
+            }
+            
             return 0;
         }
     }

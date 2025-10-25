@@ -15,25 +15,60 @@ namespace eSignUpSync.Services
 {
     public class Export
     {
-        //Get temporary API Token from eSignUp API using Client and Secret
-        public static async Task<APIAccessToken> GetESignUpAPIToken(ILogger logger, HttpClient httpClient, SettingsESignUpModel settingsESignUp)
+        public static List<Models.Candidates.CandidateModel>? CandidatesLocal { get; set; }
+        public static List<Models.Candidates.CandidateModel>? CandidatesESignUp { get; set; }
+
+        public static async Task<int?> DoExport(
+            ILogger logger, 
+            HttpClient httpClientLocalData, 
+            HttpClient httpClientESignUp,
+            APIAccessToken? apiAccessToken)
         {
-            APIAccessToken? aPIAccessToken;
-
-            string endpointLogin = $"Login/GetAccessToken?Client={settingsESignUp.Client}&Secret={settingsESignUp.Secret}";
-
-            try
+            //Check API Access Token
+            if (apiAccessToken == null || string.IsNullOrEmpty(apiAccessToken.Token))
             {
-                aPIAccessToken = await httpClient.GetFromJsonAsync<APIAccessToken>(endpointLogin);
+                logger.LogError("Error: eSignUp API Access Token is blank. Exiting.");
+                return 1;
             }
-            catch (HttpRequestException e)
+            else
             {
-                string msg = ExceptionHelper.FormatEndpointException(e, endpointLogin);
-                logger.LogError(msg);
-                return new APIAccessToken();
+                //Set Authorization Header for eSignUp HTTP Client    
+                httpClientESignUp.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiAccessToken?.Token);
             }
 
-            return aPIAccessToken ?? new();
+            //Get Local Data
+            CandidatesLocal = await Services.Export.GetLocalCandidates(logger, httpClientLocalData);
+            logger.LogInformation($"\nLoaded Candidates from Local MIS System: {CandidatesLocal?.Count()}\n");
+            if (CandidatesLocal == null || CandidatesLocal.Count() == 0)
+            {
+                logger.LogWarning("No candidates found in local MIS system. Exiting.");
+                //Not an error as may be no new candidates to export so return 0
+                return 0;
+            }
+
+            //Get eSignUp Data
+            CandidatesESignUp = await Services.Export.GetESignUpCandidates(logger, httpClientESignUp);
+            logger.LogInformation($"\nLoaded Candidates from eSignUp: {CandidatesESignUp?.Count()}\n");
+            if (CandidatesESignUp == null || CandidatesESignUp.Count() == 0)
+            {
+                logger.LogWarning("No candidates found in eSignUp");
+                //return 0;
+            }
+
+            //Send Local Candidates to eSignUp
+            int? totalCandidates = CandidatesLocal?.Count() ?? 0;
+            int? recordsSent = await Services.Export.SendLocalCandidates(logger, httpClientESignUp, CandidatesLocal);
+
+            logger.LogInformation($"\nTotal Candidates Sent to eSignUp: {recordsSent}\n");
+
+            if (recordsSent == null || recordsSent < totalCandidates)
+            {
+                logger.LogWarning("Some candidates may not have been sent successfully. Please check the logs for details.");
+                return 1;
+            }
+
+
+            return 0;
         }
 
         public static async Task<List<Models.Candidates.CandidateModel>?> GetLocalCandidates(ILogger logger, HttpClient httpClient)
@@ -48,7 +83,7 @@ namespace eSignUpSync.Services
             }
             catch (HttpRequestException e)
             {
-                string msg = ExceptionHelper.FormatEndpointException(e, endpointCandidates);
+                string msg = ExceptionHelper.FormatEndpointException(e, endpointCandidates, httpClient);
                 logger.LogError(msg);
                 return new List<Models.Candidates.CandidateModel>();
             }
@@ -78,7 +113,7 @@ namespace eSignUpSync.Services
             }
             catch (HttpRequestException e)
             {
-                string msg = ExceptionHelper.FormatEndpointException(e, endpointCandidates);
+                string msg = ExceptionHelper.FormatEndpointException(e, endpointCandidates, httpClient);
                 logger.LogError(msg);
                 return new List<Models.Candidates.CandidateModel>();
             }
@@ -172,7 +207,7 @@ namespace eSignUpSync.Services
                 }
                 catch (HttpRequestException e)
                 {
-                    string msg = ExceptionHelper.FormatEndpointException(e, endpointCandidates);
+                    string msg = ExceptionHelper.FormatEndpointException(e, endpointCandidates, httpClient);
                     logger.LogError(msg);
                     throw;
                 }

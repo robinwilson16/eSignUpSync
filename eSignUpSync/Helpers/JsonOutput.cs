@@ -12,7 +12,7 @@ namespace eSignUpSync.Helpers
 {
     public static class JsonOutput
     {
-        public static void WriteCandidateJson(ILogger logger, CandidateModel candidate, bool indented = true)
+        public static void WriteCandidateJson(ILogger logger, Models.Candidates.CandidateModel candidate, bool indented = true)
         {
             var options = new JsonSerializerOptions
             {
@@ -23,6 +23,21 @@ namespace eSignUpSync.Helpers
             };
 
             string json = JsonSerializer.Serialize(candidate, options);
+
+            logger.LogInformation(json);
+        }
+
+        public static void WriteExportCandidatesJson(ILogger logger, List<Models.ExportCandidates.CandidateModel> candidates, bool indented = true)
+        {
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = indented,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                ReferenceHandler = ReferenceHandler.IgnoreCycles
+            };
+
+            string json = JsonSerializer.Serialize(candidates, options);
 
             logger.LogInformation(json);
         }

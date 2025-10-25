@@ -11,9 +11,15 @@ namespace eSignUpSync.Helpers
         /// <summary>
         /// Create a readable, actionable message for endpoint-related exceptions.
         /// </summary>
-        public static string FormatEndpointException(Exception ex, string? endpoint = null, bool includeStack = false)
+        public static string FormatEndpointException(Exception ex, string? endpoint = null, HttpClient? client = null, bool includeStack = false)
         {
             var sb = new StringBuilder();
+            string? baseAddress = client?.BaseAddress?.ToString();
+
+            if (!string.IsNullOrWhiteSpace(baseAddress))
+            {
+                sb.AppendLine($"API Location: {baseAddress}");
+            }
 
             if (!string.IsNullOrWhiteSpace(endpoint))
             {

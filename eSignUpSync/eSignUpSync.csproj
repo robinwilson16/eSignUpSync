@@ -47,6 +47,7 @@
 
   <ItemGroup>
     <Folder Include="Interfaces\" />
+    <Folder Include="Interfaces\" />
   </ItemGroup>
 
 </Project>
