@@ -93,6 +93,7 @@ namespace eSignUpSync
             httpClientLocalData.BaseAddress = new Uri(SettingsExport.APIEndPoint);
             HttpClient httpClientESignUp = new HttpClient();
             httpClientESignUp.BaseAddress = new Uri(SettingsESignUp.Endpoint);
+
             if (httpClientLocalData == null || httpClientESignUp == null)
             {
                 logger.LogError("Error creating HTTP Client to connect to the APIs");

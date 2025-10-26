@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace eSignUpSync.Services
@@ -45,7 +47,11 @@ namespace eSignUpSync.Services
                 return 0;
             }
 
-            CandidatesLocal = await SaveLocalCandidates(logger, httpClientLocalData, CandidatesESignUp);
+            //Save candidates to file for debugging
+            //List<Models.ExportCandidates.CandidateModel>? savedToFileCandidates =
+            //    await SaveLocalCandidatesToFile(logger, httpClientLocalData, CandidatesESignUp);
+
+            CandidatesLocal = await SaveLocalCandidatesToDatabase(logger, httpClientLocalData, CandidatesESignUp);
             if (CandidatesLocal == null || CandidatesLocal.Count() == 0)
             {
                 logger.LogError("Error saving eSignUp Export Candidates to local MIS system.");
@@ -82,7 +88,7 @@ namespace eSignUpSync.Services
             return exportCandidates ?? new();
         }
 
-        public static async Task<List<Models.ExportCandidates.CandidateModel>?> SaveLocalCandidates(ILogger logger, HttpClient httpClient, List<Models.ExportCandidates.CandidateModel>? candidates)
+        public static async Task<List<Models.ExportCandidates.CandidateModel>?> SaveLocalCandidatesToDatabase(ILogger logger, HttpClient httpClient, List<Models.ExportCandidates.CandidateModel>? candidates)
         {
             if (candidates == null || candidates.Count() == 0)
             {
@@ -90,20 +96,42 @@ namespace eSignUpSync.Services
                 return new List<Models.ExportCandidates.CandidateModel>();
             }
 
-            string endpointExportCandidates = $"ExportCandidate";
+            string endpointExportCandidates = $"ExportCandidate/Many";
             HttpResponseMessage httpResponse = new HttpResponseMessage();
 
             try
             {
-                logger.LogInformation($"---------------------------");
-                eSignUpSync.Helpers.JsonOutput.WriteExportCandidatesJson(logger, candidates);
-                logger.LogInformation($"---------------------------");
+                //logger.LogInformation($"---------------------------");
+                //eSignUpSync.Helpers.JsonOutput.WriteExportCandidatesJson(logger, candidates);
+                //logger.LogInformation($"---------------------------");
 
                 httpResponse = await httpClient.PostAsJsonAsync<List<Models.ExportCandidates.CandidateModel>?>(endpointExportCandidates, candidates);
                 if (!httpResponse.IsSuccessStatusCode)
                 {
                     string responseContent = await httpResponse.Content.ReadAsStringAsync();
-                    logger.LogError($"Error saving candidates to local database");
+
+                    //// Try to parse and pretty-print JSON for readable logs
+                    //string prettyResponse;
+                    //try
+                    //{
+                    //    using var doc = JsonDocument.Parse(responseContent);
+                    //    prettyResponse = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions
+                    //    {
+                    //        WriteIndented = true,
+                    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    //    });
+                    //}
+                    //catch (JsonException)
+                    //{
+                    //    // Not JSON - keep raw (truncate for logs if very large)
+                    //    prettyResponse = responseContent;
+                    //}
+
+                    // Use helper to produce a concise, pretty output (and truncate if very long)
+                    string responseFormatted = ResponseFormatter.FormatResponseContent(responseContent, 10000);
+
+                    logger.LogError("Error saving candidates to local database. \nEndpoint: {Endpoint}. \nStatusCode: {StatusCode}. \nResponse summary:\n{ResponseSummary}",
+                        endpointExportCandidates, (int)httpResponse.StatusCode, responseFormatted);
                 }
                 else
                 {
@@ -115,6 +143,53 @@ namespace eSignUpSync.Services
                 string msg = ExceptionHelper.FormatEndpointException(e, endpointExportCandidates, httpClient);
                 logger.LogError(msg);
                 return new List<Models.ExportCandidates.CandidateModel>();
+            }
+
+            return candidates ?? new();
+        }
+
+        public static async Task<List<Models.ExportCandidates.CandidateModel>?> SaveLocalCandidatesToFile(ILogger logger, HttpClient httpClient, List<Models.ExportCandidates.CandidateModel>? candidates)
+        {
+            if (candidates == null || candidates.Count() == 0)
+            {
+                logger.LogWarning("No candidates to save locally.");
+                return new List<Models.ExportCandidates.CandidateModel>();
+            }
+
+            string endpointExportCandidates = $"ExportCandidate";
+            HttpResponseMessage httpResponse = new HttpResponseMessage();
+
+            // Prepare json options for file output
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                ReferenceHandler = ReferenceHandler.IgnoreCycles
+            };
+
+            // Ensure exports directory exists
+            string importsDir = Path.Combine(Directory.GetCurrentDirectory(), "Imports");
+            try
+            {
+                Directory.CreateDirectory(importsDir);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, $"Failed to create imports directory '{importsDir}' - continuing without saving the file.");
+            }
+
+            // Save request payload to file for debugging/audit
+            string requestFileName = Path.Combine(importsDir, $"ExportCandidates_Request_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json");
+            try
+            {
+                string requestJson = JsonSerializer.Serialize(candidates, jsonOptions);
+                await File.WriteAllTextAsync(requestFileName, requestJson);
+                logger.LogInformation($"Saved import request payload to {requestFileName}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, $"Failed to write imports request payload to file '{requestFileName}'");
             }
 
             return candidates ?? new();
