@@ -125,11 +125,11 @@ namespace eSignUpSync
             }
             else
             {
-                logger.LogInformation($"DoImport Process Finished.");
+                logger.LogInformation($"Import Process Finished.");
             }
 
             //Perform Export to export local data to eSignUp
-            logger.LogInformation($"Exporting Candidates...");
+            logger.LogInformation($"\nExporting Candidates...");
 
             int? exportResult = await Export.DoExport(logger, httpClientLocalData, httpClientESignUp, APIAccessToken);
             if (exportResult == null || exportResult > 0)
@@ -139,7 +139,7 @@ namespace eSignUpSync
             }
             else
             {
-                logger.LogInformation($"DoExport Process Finished.");
+                logger.LogInformation($"Export Process Finished.");
             }
             
             if (isError == true)

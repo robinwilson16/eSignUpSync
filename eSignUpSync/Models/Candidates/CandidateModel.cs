@@ -18,6 +18,7 @@ namespace eSignUpSync.Models.Candidates
         public string? ULN { get; set; }
         public string? Title { get; set; }
         public int? ListCandidateTitleID { get; set; }
+        public string? ListCandidateTitleMapping { get; set; }
         public string? Surname { get; set; }
         public string? PreviousSurname { get; set; }
         public string? FirstNames { get; set; }
@@ -42,7 +43,9 @@ namespace eSignUpSync.Models.Candidates
         public string? EmergencyContactEmail { get; set; }
         public string? EmergencyContactRelationship { get; set; }
         public int? ListEmergencyContactRelationshipID { get; set; }
+        public string? ListEmergencyContactRelationshipMapping { get; set; }
         public int? CandidateEthnicityID { get; set; }
+        public string? CandidateEthnicityMapping { get; set; }
         public string? NationalInsuranceNumber { get; set; }
         public int? CandidateRegistrationStatusID { get; set; }
 
@@ -81,6 +84,7 @@ namespace eSignUpSync.Models.Candidates
         public string? StudyAtAnotherCollegeName { get; set; }
         public int? HomeAddressCountryCodeID { get; set; }
         public string? HomeAddressCountry { get; set; }
+        public string? HomeAddressCountryCodeMapping { get; set; }
         public string? SexualOrientation { get; set; }
         public string? SexualOrientationSelfDescribe { get; set; }
         public string? ParentGuardianName { get; set; }
@@ -90,11 +94,13 @@ namespace eSignUpSync.Models.Candidates
         public string? ParentGuardianEmail { get; set; }
         public int? CountryOfNationalityID { get; set; }
         public string? CountryOfNationalityName { get; set; }
+        public string? CountryOfNationalityMapping { get; set; }
         public int? CountryOfBirthID { get; set; }
         public string? CountryOfBirthName { get; set; }
         public string? CountryLivingPast3Years { get; set; }
         public int? CandidateReligiousIdentityID { get; set; }
         public string? CandidateReligiousIdentityName { get; set; }
+        public string? CandidateReligiousIdentityMapping { get; set; }
         public string? ReligiousIdentityOther { get; set; }
         public int? CandidateSexualOrientationID { get; set; }
         public bool? LSNeedsSupport { get; set; }
@@ -105,6 +111,7 @@ namespace eSignUpSync.Models.Candidates
         public bool? LSNeedsPersonalCareAssistant { get; set; }
         public int? DisabilityLearningDifficultiesPrimaryID { get; set; }
         public string? DisabilityLearningDifficultiesPrimaryName { get; set; }
+        public string? DisabilityLearningDifficultiesPrimaryMapping { get; set; }
         public bool? SchoolingInterupted { get; set; }
         public bool? LivingInHostelOrResidentail { get; set; }
         public bool? OffenderInCommunity { get; set; }
@@ -118,7 +125,9 @@ namespace eSignUpSync.Models.Candidates
         public DateTime? StudentSignatureObtainedDate { get; set; }
         public string? TitleOther { get; set; }
         public int? CandidateHighestLevelID { get; set; }
+        public string? CandidateHighestLevelMapping { get; set; }
         public string? Nationality { get; set; }
+        public string? NationalityMapping { get; set; }
         public bool? PermanentUKResident { get; set; }
 
         [DataType(DataType.Date)]
@@ -145,6 +154,7 @@ namespace eSignUpSync.Models.Candidates
         public bool? HasEHCP { get; set; }
         public bool? EHCPEmployerPermission { get; set; }
         public int? ListGenderIdentityID { get; set; }
+        public string? ListGenderIdentityMapping { get; set; }
 
         public ICollection<CandidateNoteModel>? CandidateNotes { get; set; }
         public ICollection<CustomFieldValueModel>? CustomFieldValues { get; set; }

@@ -16,5 +16,6 @@ namespace eSignUpSync.Models.Candidates
         public CandidateModel? Candidate { get; set; }
         public int? CandidateDisabilityLearningDifficultiesID { get; set; }
         public string? Name { get; set; }
+        public string? CandidateDisabilityLearningDifficultiesMapping { get; set; }
     }
 }

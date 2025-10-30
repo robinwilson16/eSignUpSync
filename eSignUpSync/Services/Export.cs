@@ -55,9 +55,23 @@ namespace eSignUpSync.Services
                 //return 0;
             }
 
+            //Check which Local Candidates are not in eSignUp
+            List<Models.Candidates.CandidateModel>? candidatesToSend = Services.Export.GetNewCandidatesToSendToESignUp(logger, CandidatesLocal, CandidatesESignUp);
+
+            if (candidatesToSend == null || candidatesToSend.Count() == 0)
+            {
+                logger.LogInformation("No new candidates to send to eSignUp. Exiting.");
+                return 0;
+            }
+            else
+            {
+                CandidatesLocal = candidatesToSend;
+                logger.LogInformation($"\nTotal New Candidates to Send to eSignUp: {candidatesToSend?.Count()}\n");
+            }
+
             //Send Local Candidates to eSignUp
             int? totalCandidates = CandidatesLocal?.Count() ?? 0;
-            int? recordsSent = await Services.Export.SendLocalCandidates(logger, httpClientESignUp, CandidatesLocal);
+            int? recordsSent = await Services.Export.SendLocalCandidates(logger, httpClientESignUp, candidatesToSend);
 
             logger.LogInformation($"\nTotal Candidates Sent to eSignUp: {recordsSent}\n");
 
@@ -66,7 +80,6 @@ namespace eSignUpSync.Services
                 logger.LogWarning("Some candidates may not have been sent successfully. Please check the logs for details.");
                 return 1;
             }
-
 
             return 0;
         }
@@ -119,6 +132,32 @@ namespace eSignUpSync.Services
             }
 
             return candidates ?? new();
+        }
+
+        public static List<Models.Candidates.CandidateModel>? GetNewCandidatesToSendToESignUp(ILogger logger, List<Models.Candidates.CandidateModel>? candidatesLocal, List<Models.Candidates.CandidateModel>? candidatesESignUp)
+        {
+            List<Models.Candidates.CandidateModel> candidatesToSend = new();
+            if (candidatesLocal == null || candidatesLocal.Count() == 0)
+            {
+                logger.LogWarning("No local candidates available to compare.");
+                return candidatesToSend;
+            }
+
+            if (candidatesESignUp == null)
+            {
+                candidatesESignUp = new List<Models.Candidates.CandidateModel>();
+            }
+            //Identify Local Candidates not in eSignUp
+            foreach (var localCandidate in candidatesLocal)
+            {
+                bool existsInESignUp = candidatesESignUp.Any(e => e.StudentID == localCandidate.StudentID);
+                if (!existsInESignUp)
+                {
+                    candidatesToSend.Add(localCandidate);
+                }
+            }
+            logger.LogInformation($"Identified {candidatesToSend.Count()} new candidates to send to eSignUp.");
+            return candidatesToSend;
         }
 
         public static async Task<int?> SendLocalCandidates(ILogger logger, HttpClient httpClient, List<Models.Candidates.CandidateModel>? candidates)
