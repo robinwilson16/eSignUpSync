@@ -16,9 +16,6 @@ namespace eSignUpSync.Models.ExportCandidates
         [JsonIgnore]
         public int ID { get; set; }
 
-        [JsonIgnore]
-        public int VacancyID { get; set; }
-
         [JsonPropertyName("employerID")]
         public string? EmployerID { get; set; }
 
@@ -38,9 +35,10 @@ namespace eSignUpSync.Models.ExportCandidates
         [Display(Name = "EDRS Number")]
         public int? eDRSNumber
         {
-            get {
+            get
+            {
                 int.TryParse(EDRSNumber, new CultureInfo("en-GB"), out int EDRSNumberInt);
-                return EDRSNumberInt; 
+                return EDRSNumberInt;
             }
         }
 
@@ -50,6 +48,8 @@ namespace eSignUpSync.Models.ExportCandidates
         public string? VacancyEmployerSiteTown { get; set; }
         public string? VacancyEmployerSitePostCode { get; set; }
 
+        [JsonIgnore]
+        public int PlacedRecruitmentID { get; set; }
         [JsonIgnore]
         public PlacedRecruitmentModel? PlacedRecruitment { get; set; }
     }

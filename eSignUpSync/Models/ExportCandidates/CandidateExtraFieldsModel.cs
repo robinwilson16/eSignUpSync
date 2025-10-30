@@ -11,8 +11,9 @@ namespace eSignUpSync.Models.ExportCandidates
 {
     public class CandidateExtraFieldsModel
     {
+        [Key]
         [JsonIgnore]
-        public int ID { get; set; }
+        public int CandidateID { get; set; }
 
         public string? ApprenticeshipVacancy { get; set; }
         public string? PreviouslyStudiedInUK { get; set; }
@@ -56,5 +57,6 @@ namespace eSignUpSync.Models.ExportCandidates
         }
 
         public string? WorkExperience { get; set; }
+        public CandidateModel? Candidate { get; set; }
     }
 }

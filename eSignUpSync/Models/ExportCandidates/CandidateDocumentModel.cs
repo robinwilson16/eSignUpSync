@@ -24,7 +24,7 @@ namespace eSignUpSync.Models.ExportCandidates
         [Display(Name = "Last Updated Date")]
         public DateTime? lastUpdatedDate
         {
-            get { return LastUpdatedDate == null ? null : DateTime.ParseExact(LastUpdatedDate ?? "", "yyyy-MM-dd", new CultureInfo("en-GB")); }
+            get { return LastUpdatedDate == null ? null : DateTime.ParseExact(LastUpdatedDate ?? "", "yyyy-MM-dd HH:mm:ss", new CultureInfo("en-GB")); }
         }
 
         public string? DocumentURL { get; set; }
