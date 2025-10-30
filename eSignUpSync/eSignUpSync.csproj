@@ -9,6 +9,11 @@
     <FileVersion>1.0.0</FileVersion>
   </PropertyGroup>
 
+  <!-- Embed PDB file into .exe for single file publish-->
+  <PropertyGroup>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+	
   <ItemGroup>
     <None Remove="appsettings.Development.json" />
     <None Remove="appsettings.json" />
