@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,8 @@ namespace eSignUpSync.Models.ExportCandidates
         public bool? Required { get; set; }
         public bool? StudyTowards { get; set; }
         public bool? TakeExam { get; set; }
+
+        [Column(TypeName = "decimal(19,4)")]
         public decimal? TotalHours { get; set; }
         public string? FundingSource { get; set; }
 

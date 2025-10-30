@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -21,6 +22,7 @@ namespace eSignUpSync.Models.ExportCandidates
 
         [JsonIgnore]
         [Display(Name = "Min OTJ Training")]
+        [Column(TypeName = "decimal(19,4)")]
         public decimal? minOTJTraining
         {
             get { return MinOTJTraining == null ? null : decimal.Parse(MinOTJTraining ?? "", new CultureInfo("en-GB")); }
@@ -67,6 +69,7 @@ namespace eSignUpSync.Models.ExportCandidates
 
         [JsonIgnore]
         [Display(Name = "Training Plan OTJ Hours")]
+        [Column(TypeName = "decimal(19,4)")]
         public decimal? trainingPlanOTJHours
         {
             get { return TrainingPlanOTJHours == null ? null : decimal.Parse(TrainingPlanOTJHours ?? "", new CultureInfo("en-GB")); }
@@ -126,7 +129,11 @@ namespace eSignUpSync.Models.ExportCandidates
         public string? EmployerContactEmail { get; set; }
         public string? AcademicLevel { get; set; }
         public bool? IsEnrolled { get; set; }
+
+        [Column(TypeName = "decimal(19,4)")]
         public decimal? TotalRPLOTJHours { get; set; }
+
+        [Column(TypeName = "decimal(19,4)")]
         public decimal? PlannedSkillScanHours { get; set; }
 
         [JsonIgnore]

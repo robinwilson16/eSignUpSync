@@ -37,6 +37,9 @@ namespace eSignUpSync.Models.ExportCandidates
         public string? CreatedBy { get; set; }
 
         [JsonIgnore]
+        public int CandidateID { get; set; }
+
+        [JsonIgnore]
         public CandidateModel? Candidate { get; set; }
     }
 }

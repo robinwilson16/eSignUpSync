@@ -15,7 +15,7 @@ namespace eSignUpSync.Models.ExportCandidates
         public string? FormSection { get; set; }
         public string? FieldName { get; set; }
         public string? FieldValue { get; set; }
-        
+
         [JsonIgnore]
         public CandidateModel? Candidate { get; set; }
     }

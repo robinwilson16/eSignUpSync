@@ -39,10 +39,10 @@ namespace eSignUpSync.Data
             //The dependent side could not be determined for the one-to-one relationship between 'ApprenticeshipEmployerModel.PlacedRecruitment' and 'PlacedRecruitmentModel.ApprenticeshipEmployer'.
             //To identify the dependent side of the relationship, configure the foreign key property.
             //If these navigations should not be part of the same relationship, configure them independently via separate method chains in 'OnModelCreating'.
-            modelBuilder.Entity<Models.ExportCandidates.PlacedRecruitmentModel>()
-            .HasOne(a => a.ApprenticeshipEmployer)
-            .WithOne(a => a.PlacedRecruitment)
-            .HasForeignKey<Models.ExportCandidates.ApprenticeshipEmployerModel>(c => c.VacancyID);
+            //modelBuilder.Entity<Models.ExportCandidates.PlacedRecruitmentModel>()
+            //.HasOne(a => a.ApprenticeshipEmployer)
+            //.WithOne(a => a.PlacedRecruitment)
+            //.HasForeignKey<Models.ExportCandidates.ApprenticeshipEmployerModel>(c => c.VacancyID);
         }
     }
 }

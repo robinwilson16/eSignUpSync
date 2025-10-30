@@ -15,7 +15,7 @@ namespace eSignUpSync.Models.ExportCandidates
         public string? ContPrefDesc { get; set; }
         public string? ContPrefType { get; set; }
         public string? ContPrefCode { get; set; }
-        
+
         [JsonIgnore]
         public CandidateModel? Candidate { get; set; }
     }
