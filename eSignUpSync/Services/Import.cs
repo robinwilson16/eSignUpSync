@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -51,6 +53,8 @@ namespace eSignUpSync.Services
             //List<Models.ExportCandidates.CandidateModel>? savedToFileCandidates =
             //    await SaveLocalCandidatesToFile(logger, httpClientLocalData, CandidatesESignUp);
 
+            //bool? candidatesDeleted = await DeleteLocalCandidatesFromDatabase(logger, httpClientLocalData);
+
             CandidatesLocal = await SaveLocalCandidatesToDatabase(logger, httpClientLocalData, CandidatesESignUp);
             if (CandidatesLocal == null || CandidatesLocal.Count() == 0)
             {
@@ -88,6 +92,80 @@ namespace eSignUpSync.Services
             return exportCandidates ?? new();
         }
 
+        public static async Task<List<Models.ExportCandidates.CandidateModel>?> GetLocalCandidatesFromDatabase(ILogger logger, HttpClient httpClient)
+        {
+            List<Models.ExportCandidates.CandidateModel>? localCandidates = new();
+            string endpointExportCandidates = $"ExportCandidate";
+            try
+            {
+                localCandidates = await httpClient.GetFromJsonAsync<List<Models.ExportCandidates.CandidateModel>?>(endpointExportCandidates);
+
+                logger.LogInformation($"\nLoaded Export Candidates from local database: {localCandidates?.Count}\n");
+            }
+
+            catch (HttpRequestException e)
+            {
+                if (e.StatusCode == HttpStatusCode.NotFound)
+                {
+                    logger.LogInformation($"No records found as may have already been deleted");
+                    return new List<Models.ExportCandidates.CandidateModel>();
+                }
+                else
+                {
+                    string msg = ExceptionHelper.FormatEndpointException(e, endpointExportCandidates, httpClient);
+                    logger.LogError(msg);
+                    return new List<Models.ExportCandidates.CandidateModel>();
+                }     
+            }
+            return localCandidates ?? new();
+        }
+
+        public static async Task<bool?> DeleteLocalCandidatesFromDatabase(ILogger logger, HttpClient httpClient)
+        {
+            List<Models.ExportCandidates.CandidateModel>? currentCandidates = new();
+
+            currentCandidates = await GetLocalCandidatesFromDatabase(logger, httpClient);
+
+            List<Models.ExportCandidates.CandidateModel>? deletedCandidates = new();
+
+            if (currentCandidates == null || currentCandidates.Count() == 0)
+            {
+                logger.LogWarning("No candidates to delete locally.");
+
+                //Not an error - nothing to delete
+                return true;
+            }
+
+            string endpointExportCandidates = $"ExportCandidate/All/Y";
+            HttpResponseMessage httpResponse = new HttpResponseMessage();
+            try
+            {
+                //Does not return candidates currently so will always be NULL
+                logger.LogInformation($"Deleting {currentCandidates.Count()} existing candidates from local database.");
+                httpResponse = await httpClient.DeleteAsync(endpointExportCandidates);
+                if (!httpResponse.IsSuccessStatusCode)
+                {
+                    string responseContent = await httpResponse.Content.ReadAsStringAsync();
+                    string responseFormatted = ResponseFormatter.FormatResponseContent(responseContent, 10000);
+
+                    logger.LogError("Error saving candidates to local database. \nEndpoint: {Endpoint}. \nStatusCode: {StatusCode}. \nResponse summary:\n{ResponseSummary}",
+                        endpointExportCandidates, (int)httpResponse.StatusCode, responseFormatted);
+                }
+                else
+                {
+                    //DeleteAll does not currently return deleted candidates
+                    //deletedCandidates = await httpResponse.Content.ReadFromJsonAsync<List<Models.ExportCandidates.CandidateModel>?>();
+                }
+            }
+            catch (HttpRequestException e)
+            {
+                string msg = ExceptionHelper.FormatEndpointException(e, endpointExportCandidates, httpClient);
+                logger.LogError(msg);
+                return false;
+            }
+            return true;
+        }
+
         public static async Task<List<Models.ExportCandidates.CandidateModel>?> SaveLocalCandidatesToDatabase(ILogger logger, HttpClient httpClient, List<Models.ExportCandidates.CandidateModel>? candidates)
         {
             if (candidates == null || candidates.Count() == 0)
@@ -105,29 +183,19 @@ namespace eSignUpSync.Services
                 //eSignUpSync.Helpers.JsonOutput.WriteExportCandidatesJson(logger, candidates);
                 //logger.LogInformation($"---------------------------");
 
+                //First remove existing candidates
+                bool? candidatesDeleted = await DeleteLocalCandidatesFromDatabase(logger, httpClient);
+
+                if (candidatesDeleted != true) {
+                    logger.LogError("Error removing existing data.");
+
+                    return new List<Models.ExportCandidates.CandidateModel>();
+                }
+
                 httpResponse = await httpClient.PostAsJsonAsync<List<Models.ExportCandidates.CandidateModel>?>(endpointExportCandidates, candidates);
                 if (!httpResponse.IsSuccessStatusCode)
                 {
                     string responseContent = await httpResponse.Content.ReadAsStringAsync();
-
-                    //// Try to parse and pretty-print JSON for readable logs
-                    //string prettyResponse;
-                    //try
-                    //{
-                    //    using var doc = JsonDocument.Parse(responseContent);
-                    //    prettyResponse = JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions
-                    //    {
-                    //        WriteIndented = true,
-                    //        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                    //    });
-                    //}
-                    //catch (JsonException)
-                    //{
-                    //    // Not JSON - keep raw (truncate for logs if very large)
-                    //    prettyResponse = responseContent;
-                    //}
-
-                    // Use helper to produce a concise, pretty output (and truncate if very long)
                     string responseFormatted = ResponseFormatter.FormatResponseContent(responseContent, 10000);
 
                     logger.LogError("Error saving candidates to local database. \nEndpoint: {Endpoint}. \nStatusCode: {StatusCode}. \nResponse summary:\n{ResponseSummary}",
