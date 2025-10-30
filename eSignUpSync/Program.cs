@@ -115,6 +115,8 @@ namespace eSignUpSync
             bool? isError = false;
 
             //Perform Import to import eSignUp data to local eSignUp Database
+            logger.LogInformation($"Importing Candidates...");
+
             int? importResult = await Services.Import.DoImport(logger, httpClientLocalData, httpClientESignUp, APIAccessToken);
             if (importResult == null || importResult > 0)
             {
@@ -127,6 +129,8 @@ namespace eSignUpSync
             }
 
             //Perform Export to export local data to eSignUp
+            logger.LogInformation($"Exporting Candidates...");
+
             int? exportResult = await Export.DoExport(logger, httpClientLocalData, httpClientESignUp, APIAccessToken);
             if (exportResult == null || exportResult > 0)
             {
@@ -147,7 +151,7 @@ namespace eSignUpSync
             {
                 logger.LogInformation($"eSignUp Sync Process Finished.");
             }
-            
+
             return 0;
         }
     }
